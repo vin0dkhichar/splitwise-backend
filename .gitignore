@@ -1,5 +1,6 @@
 __pycache__/
 .venv/
 .env
+.env.*
 alembic/__pycache__/
 alembic/*.pyc
