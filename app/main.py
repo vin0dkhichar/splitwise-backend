@@ -9,7 +9,9 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Auth Service")
 
+expenses_routes = ExpenseRoutes()
+
 app.include_router(auth_routes.router)
-app.include_router(ExpenseRoutes.router)
+app.include_router(expenses_routes.router)
 app.include_router(UserRoutes.router)
 app.include_router(GroupRoutes.router)

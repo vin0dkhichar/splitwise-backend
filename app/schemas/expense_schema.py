@@ -50,3 +50,32 @@ class PercentageExpenseCreate(BaseModel):
 class ExpenseWithSharesOut(BaseModel):
     expense: ExpenseOut
     shares: List[ExpenseShareOut]
+
+class ExactShareUpdate(BaseModel):
+    user_id: int
+    share_amount: float
+
+class PercentageShareUpdate(BaseModel):
+    user_id: int
+    percentage: float
+
+class EqualExpenseUpdate(BaseModel):
+    description: str
+    amount: float
+    paid_by: int
+    participant_ids: List[int]
+    group_id: Optional[int] = None
+
+class ExactExpenseUpdate(BaseModel):
+    description: str
+    amount: float
+    paid_by: int
+    shares: List[ExactShareUpdate]
+    group_id: Optional[int] = None
+
+class PercentageExpenseUpdate(BaseModel):
+    description: str
+    amount: float
+    paid_by: int
+    shares: List[PercentageShareUpdate]
+    group_id: Optional[int] = None
