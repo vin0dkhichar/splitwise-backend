@@ -1,6 +1,12 @@
-from sqlalchemy import Column, Integer, Float, String, ForeignKey, DateTime, func
+from sqlalchemy import Column, Integer, Float, String, ForeignKey, DateTime, Enum, func
 from sqlalchemy.orm import relationship
 from app.core.database import Base
+import enum
+
+class ExpenseType(str, enum.Enum):
+    EQUAL = "equal"
+    EXACT = "exact"
+    PERCENTAGE = "percentage"
 
 class Expense(Base):
     __tablename__ = "expenses"
@@ -10,6 +16,7 @@ class Expense(Base):
     amount = Column(Float, nullable=False)
     paid_by = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     group_id = Column(Integer, ForeignKey("groups.id", ondelete="CASCADE"), nullable=True)
+    expense_type = Column(Enum(ExpenseType), nullable=False, default=ExpenseType.EQUAL)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     group = relationship("Group", back_populates="expenses")

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, Float, ForeignKey
+from sqlalchemy import Column, Integer, Float, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 
@@ -9,6 +9,8 @@ class ExpenseShare(Base):
     expense_id = Column(Integer, ForeignKey("expenses.id", ondelete="CASCADE"), nullable=False)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     share_amount = Column(Float, nullable=False)
+    is_paid = Column(Boolean, nullable=False, default=False)
 
     expense = relationship("Expense", back_populates="shares")
     user = relationship("User", back_populates="shares")
+    settlement = relationship("Settlement", back_populates="expense_share", uselist=False)

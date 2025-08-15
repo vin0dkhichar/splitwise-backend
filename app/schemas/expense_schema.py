@@ -1,9 +1,13 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Optional
 
 class ExpenseShareInput(BaseModel):
     user_id: int
     share_amount: float
+
+class ExpensePercentageInput(BaseModel):
+    user_id: int
+    percentage: float = Field(..., gt=0, le=100)
 
 class ExpenseOut(BaseModel):
     id: int
@@ -29,12 +33,19 @@ class EqualExpenseCreate(BaseModel):
     group_id: Optional[int] = None
     participant_ids: List[int]
 
-class CustomExpenseCreate(BaseModel):
+class ExactExpenseCreate(BaseModel):
     description: Optional[str] = None
     amount: float
     paid_by: int
     group_id: Optional[int] = None
     shares: List[ExpenseShareInput]
+
+class PercentageExpenseCreate(BaseModel):
+    description: Optional[str] = None
+    amount: float
+    paid_by: int
+    group_id: Optional[int] = None
+    shares: List[ExpensePercentageInput]
 
 class ExpenseWithSharesOut(BaseModel):
     expense: ExpenseOut

@@ -16,7 +16,6 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 @router.post("/login", response_model=Token)
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    # OAuth2PasswordRequestForm uses 'username' field — we'll treat it as email here.
     email = form_data.username
     password = form_data.password
     user = user_service.authenticate_user(db, email, password)

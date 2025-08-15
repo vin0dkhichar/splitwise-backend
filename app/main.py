@@ -1,13 +1,15 @@
 from fastapi import FastAPI
-from app.routes import user_routes, auth_routes, groups_routes, expenses_routes
+from app.routes import auth_routes
+from app.routes.expenses_routes import ExpenseRoutes
+from app.routes.user_routes import UserRoutes
+from app.routes.groups_routes import GroupRoutes
 from app.core.database import Base, engine
 
-# auto-create tables (for dev). In prod prefer alembic migrations.
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Auth Service")
 
-app.include_router(user_routes.router)
 app.include_router(auth_routes.router)
-app.include_router(groups_routes.router)
-app.include_router(expenses_routes.router)
+app.include_router(ExpenseRoutes.router)
+app.include_router(UserRoutes.router)
+app.include_router(GroupRoutes.router)
