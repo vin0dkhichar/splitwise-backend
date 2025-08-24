@@ -13,4 +13,3 @@ class ExpenseShare(Base):
 
     expense = relationship("Expense", back_populates="shares")
     user = relationship("User", back_populates="shares")
-    settlement = relationship("Settlement", back_populates="expense_share", uselist=False)

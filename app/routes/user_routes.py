@@ -9,13 +9,42 @@ from app.models.user import User
 
 
 class UserRoutes:
-    router = APIRouter(prefix="/users", tags=["Users"])
-    user_service = UserService(UserRepository())
+    def __init__(self):
+        self.router = APIRouter(prefix="/users", tags=["Users"])
+        self.user_service = UserService(UserRepository())
 
-    @router.post("/", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-    def create_user(payload: UserCreate, db: Session = Depends(get_db)):
+        self.router.add_api_route(
+            "/",
+            self.create_user,
+            response_model=UserResponse,
+            status_code=status.HTTP_201_CREATED,
+            methods=["POST"]
+        )
+
+        self.router.add_api_route(
+            "/{user_id}",
+            self.get_user,
+            response_model=UserResponse,
+            methods=["GET"]
+        )
+
+        self.router.add_api_route(
+            "/{user_id}",
+            self.update_user,
+            response_model=UserResponse,
+            methods=["PUT"]
+        )
+
+        # self.router.add_api_route(
+        #     "/{user_id}",
+        #     self.delete_user,
+        #     status_code=status.HTTP_204_NO_CONTENT,
+        #     methods=["DELETE"]
+        # )
+
+    def create_user(self, payload: UserCreate, db: Session = Depends(get_db)):
         try:
-            user = UserRoutes.user_service.create_user(db, payload)
+            user = self.user_service.create_user(db, payload)
         except ValueError as e:
             if str(e) == "email_exists":
                 raise HTTPException(status_code=400, detail="Email already registered")
@@ -24,27 +53,24 @@ class UserRoutes:
             raise HTTPException(status_code=400, detail="Bad request")
         return user
 
-    @router.get("/{user_id}", response_model=UserResponse)
-    def get_user(user_id: int, db: Session = Depends(get_db)):
-        user = UserRoutes.user_service.get_user_by_id(db, user_id)
+    def get_user(self, user_id: int, db: Session = Depends(get_db)):
+        user = self.user_service.get_user_by_id(db, user_id)
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
         return user
 
-    @router.put("/{user_id}", response_model=UserResponse)
-    def update_user(user_id: int, payload: UserUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    def update_user(self, user_id: int, payload: UserUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
         if current_user.id != user_id:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to update this user")
-        updated_user = UserRoutes.user_service.update_user(db, user_id, payload)
+        updated_user = self.user_service.update_user(db, user_id, payload)
         if not updated_user:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
         return updated_user
 
-    @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
-    def delete_user(user_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    def delete_user(self, user_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
         if current_user.id != user_id:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to delete this user")
-        success = UserRoutes.user_service.delete_user(db, user_id)
+        success = self.user_service.delete_user(db, user_id)
         if not success:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
         return None
