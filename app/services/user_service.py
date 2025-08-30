@@ -4,12 +4,12 @@ from app.models.user import User
 from app.repositories.user_repository import UserRepository
 from app.core.security import hash_password, verify_password
 
+
 class UserService:
     def __init__(self, repository: UserRepository):
         self.repository = repository
 
     def create_user(self, db: Session, user_data: UserCreate):
-        # unique checks
         if self.repository.get_user_by_email(db, user_data.email):
             raise ValueError("email_exists")
         if self.repository.get_user_by_username(db, user_data.username):
@@ -19,7 +19,7 @@ class UserService:
         new_user = User(
             username=user_data.username,
             email=user_data.email,
-            password_hash=hashed_password
+            password_hash=hashed_password,
         )
         return self.repository.create_user(db, new_user)
 
@@ -33,6 +33,9 @@ class UserService:
 
     def get_user_by_id(self, db: Session, user_id: int):
         return self.repository.get_user_by_id(db, user_id)
+
+    def get_all_users(self, db: Session):
+        return self.repository.get_all_users(db)
 
     def update_user(self, db: Session, user_id: int, user_data: UserUpdate):
         user = self.repository.get_user_by_id(db, user_id)

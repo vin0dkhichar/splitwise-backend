@@ -7,9 +7,15 @@ from app.repositories.group_repository import GroupRepository
 from app.routes.auth_routes import get_current_user
 from app.models.expense import ExpenseType
 from app.schemas.expense_schema import (
-    EqualExpenseCreate, ExactExpenseCreate, PercentageExpenseCreate, 
-    ExpenseWithSharesOut, EqualExpenseUpdate, ExactExpenseUpdate, PercentageExpenseUpdate
+    EqualExpenseCreate,
+    ExactExpenseCreate,
+    PercentageExpenseCreate,
+    ExpenseWithSharesOut,
+    EqualExpenseUpdate,
+    ExactExpenseUpdate,
+    PercentageExpenseUpdate,
 )
+
 
 class ExpenseRoutes:
     def __init__(self):
@@ -33,70 +39,135 @@ class ExpenseRoutes:
             self.create_expense,
             response_model=ExpenseWithSharesOut,
             status_code=status.HTTP_201_CREATED,
-            methods=["POST"]
+            methods=["POST"],
+        )
+
+        self.router.add_api_route(
+            "/group/{group_id}",
+            self.list_group_expenses,
+            response_model=list[ExpenseWithSharesOut],
+            methods=["GET"],
         )
 
         self.router.add_api_route(
             "/{expense_id}",
             self.get_expense,
             response_model=ExpenseWithSharesOut,
-            methods=["GET"]
+            methods=["GET"],
         )
 
         self.router.add_api_route(
             "/{expense_id}/update/{expense_type}",
             self.update_expense,
             response_model=ExpenseWithSharesOut,
-            methods=["PUT"]
+            methods=["PUT"],
         )
 
         self.router.add_api_route(
             "/{expense_id}",
             self.delete_expense,
             status_code=status.HTTP_204_NO_CONTENT,
-            methods=["DELETE"]
+            methods=["DELETE"],
         )
 
-    def create_expense(self, expense_type: ExpenseType, payload: dict = Body(...), db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+    def create_expense(
+        self,
+        expense_type: ExpenseType,
+        payload: dict = Body(...),
+        db: Session = Depends(get_db),
+        current_user=Depends(get_current_user),
+    ):
         Schema = self.payload_mapping.get(expense_type)
         if not Schema:
             raise HTTPException(status_code=400, detail="Invalid expense type")
         try:
             validated_payload = Schema(**payload)
-            return self.service.create_expense(db, validated_payload, expense_type, requester_id=current_user.id)
+            return self.service.create_expense(
+                db, validated_payload, expense_type, requester_id=current_user.id
+            )
         except ValueError as e:
             raise HTTPException(status_code=400, detail=str(e))
 
-    def get_expense(self, expense_id: int, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+    def list_group_expenses(
+        self,
+        group_id: int,
+        db: Session = Depends(get_db),
+        current_user=Depends(get_current_user),
+    ):
         try:
-            res = self.service.get_expense_with_shares(db, expense_id, requester_id=current_user.id)
+            expenses = self.service.list_expenses_for_group(
+                db, group_id, requester_id=current_user.id
+            )
+            return [
+                self.service.get_expense_with_shares(
+                    db, e.id, requester_id=current_user.id
+                )
+                for e in expenses
+            ]
+        except ValueError as e:
+            raise HTTPException(status_code=403, detail=str(e))
+
+    def get_expense(
+        self,
+        expense_id: int,
+        db: Session = Depends(get_db),
+        current_user=Depends(get_current_user),
+    ):
+        try:
+            res = self.service.get_expense_with_shares(
+                db, expense_id, requester_id=current_user.id
+            )
             if not res:
                 raise HTTPException(status_code=404, detail="Expense not found")
             return res
         except ValueError as e:
             raise HTTPException(status_code=403, detail=str(e))
-        
-    def update_expense(self, expense_id: int, expense_type: ExpenseType, payload: dict = Body(...), db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+
+    def update_expense(
+        self,
+        expense_id: int,
+        expense_type: ExpenseType,
+        payload: dict = Body(...),
+        db: Session = Depends(get_db),
+        current_user=Depends(get_current_user),
+    ):
         try:
-            existing_expense = self.service.get_expense_with_shares(db, expense_id, requester_id=current_user.id)
+            existing_expense = self.service.get_expense_with_shares(
+                db, expense_id, requester_id=current_user.id
+            )
             if not existing_expense:
                 raise HTTPException(status_code=404, detail="Expense not found")
-            
+
             Schema = self.update_payload_mapping.get(expense_type)
             if not Schema:
-                raise HTTPException(status_code=400, detail="Invalid expense type for update")
-            
+                raise HTTPException(
+                    status_code=400, detail="Invalid expense type for update"
+                )
+
             validated_payload = Schema(**payload)
-            return self.service.update_expense(db, expense_id, validated_payload, expense_type, requester_id=current_user.id)
+            return self.service.update_expense(
+                db,
+                expense_id,
+                validated_payload,
+                expense_type,
+                requester_id=current_user.id,
+            )
         except ValueError as e:
             raise HTTPException(status_code=400, detail=str(e))
         except Exception as e:
             print(f"Validation error: {e}")
             raise HTTPException(status_code=422, detail=f"Validation error: {str(e)}")
 
-    def delete_expense(self, expense_id: int, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+    def delete_expense(
+        self,
+        expense_id: int,
+        db: Session = Depends(get_db),
+        current_user=Depends(get_current_user),
+    ):
         try:
-            success = self.service.delete_expense(db, expense_id, requester_id=current_user.id)
+            success = self.service.delete_expense(
+                db, expense_id, requester_id=current_user.id
+            )
             if not success:
                 raise HTTPException(status_code=404, detail="Expense not found")
         except ValueError as e:

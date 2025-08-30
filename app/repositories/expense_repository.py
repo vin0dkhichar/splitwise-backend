@@ -3,6 +3,7 @@ from typing import Optional, List
 from app.models.expense import Expense
 from app.models.expense_share import ExpenseShare
 
+
 class ExpenseRepository:
     def create(self, db: Session, expense: Expense) -> Expense:
         db.add(expense)
@@ -15,7 +16,7 @@ class ExpenseRepository:
 
     def list_for_group(self, db: Session, group_id: int):
         return db.query(Expense).filter(Expense.group_id == group_id).all()
-    
+
     def update(self, db: Session, expense: Expense):
         db.commit()
         db.refresh(expense)
@@ -26,7 +27,7 @@ class ExpenseRepository:
         db.commit()
         db.refresh(share)
         return share
-    
+
     def delete_shares_for_expense(self, db: Session, expense_id: int):
         db.query(ExpenseShare).filter(ExpenseShare.expense_id == expense_id).delete()
         db.commit()
@@ -36,7 +37,9 @@ class ExpenseRepository:
         db.commit()
 
     def list_shares(self, db: Session, expense_id: int) -> List[ExpenseShare]:
-        return db.query(ExpenseShare).filter(ExpenseShare.expense_id == expense_id).all()
+        return (
+            db.query(ExpenseShare).filter(ExpenseShare.expense_id == expense_id).all()
+        )
 
     def get_expense_with_shares(self, db: Session, expense_id: int):
         exp = self.get_by_id(db, expense_id)

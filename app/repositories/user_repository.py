@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from app.models.user import User
 from typing import Optional
 
+
 class UserRepository:
     def create_user(self, db: Session, user: User) -> User:
         db.add(user)
@@ -22,6 +23,9 @@ class UserRepository:
         db.commit()
         db.refresh(user)
         return user
+
+    def get_all_users(self, db: Session):
+        return db.query(User).all()
 
     def delete_user(self, db: Session, user: User):
         db.delete(user)

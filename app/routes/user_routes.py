@@ -18,28 +18,26 @@ class UserRoutes:
             self.create_user,
             response_model=UserResponse,
             status_code=status.HTTP_201_CREATED,
-            methods=["POST"]
+            methods=["POST"],
         )
 
         self.router.add_api_route(
-            "/{user_id}",
-            self.get_user,
-            response_model=UserResponse,
-            methods=["GET"]
+            "/", self.get_all_users, response_model=list[UserResponse], methods=["GET"]
         )
 
         self.router.add_api_route(
-            "/{user_id}",
-            self.update_user,
-            response_model=UserResponse,
-            methods=["PUT"]
+            "/{user_id}", self.get_user, response_model=UserResponse, methods=["GET"]
+        )
+
+        self.router.add_api_route(
+            "/{user_id}", self.update_user, response_model=UserResponse, methods=["PUT"]
         )
 
         # self.router.add_api_route(
         #     "/{user_id}",
         #     self.delete_user,
         #     status_code=status.HTTP_204_NO_CONTENT,
-        #     methods=["DELETE"]
+        #     methods=["DELETE"],
         # )
 
     def create_user(self, payload: UserCreate, db: Session = Depends(get_db)):
@@ -53,24 +51,58 @@ class UserRoutes:
             raise HTTPException(status_code=400, detail="Bad request")
         return user
 
-    def get_user(self, user_id: int, db: Session = Depends(get_db)):
+    def get_user(
+        self,
+        user_id: int,
+        db: Session = Depends(get_db),
+        current_user: User = Depends(get_current_user),
+    ):
         user = self.user_service.get_user_by_id(db, user_id)
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
         return user
 
-    def update_user(self, user_id: int, payload: UserUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    def get_all_users(
+        self,
+        db: Session = Depends(get_db),
+        current_user: User = Depends(get_current_user),
+    ):
+        users = self.user_service.get_all_users(db)
+        return users
+
+    def update_user(
+        self,
+        user_id: int,
+        payload: UserUpdate,
+        db: Session = Depends(get_db),
+        current_user: User = Depends(get_current_user),
+    ):
         if current_user.id != user_id:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to update this user")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Not authorized to update this user",
+            )
         updated_user = self.user_service.update_user(db, user_id, payload)
         if not updated_user:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+            )
         return updated_user
 
-    def delete_user(self, user_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    def delete_user(
+        self,
+        user_id: int,
+        db: Session = Depends(get_db),
+        current_user: User = Depends(get_current_user),
+    ):
         if current_user.id != user_id:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to delete this user")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Not authorized to delete this user",
+            )
         success = self.user_service.delete_user(db, user_id)
         if not success:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+            )
         return None

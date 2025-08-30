@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String
 from app.core.database import Base
 from sqlalchemy.orm import relationship
 
+
 class User(Base):
     __tablename__ = "users"
 
@@ -10,6 +11,12 @@ class User(Base):
     email = Column(String(100), unique=True, nullable=False, index=True)
     password_hash = Column(String(255), nullable=False)
 
-    group_memberships = relationship("GroupMember", back_populates="user", cascade="all, delete-orphan")
-    payments = relationship("Expense", back_populates="payer", foreign_keys="Expense.paid_by")
-    shares = relationship("ExpenseShare", back_populates="user", foreign_keys="ExpenseShare.user_id")
+    group_memberships = relationship(
+        "GroupMember", back_populates="user", cascade="all, delete-orphan"
+    )
+    payments = relationship(
+        "Expense", back_populates="payer", foreign_keys="Expense.paid_by"
+    )
+    shares = relationship(
+        "ExpenseShare", back_populates="user", foreign_keys="ExpenseShare.user_id"
+    )
