@@ -7,52 +7,102 @@ from app.repositories.user_repository import UserRepository
 from app.routes.auth_routes import get_current_user
 from app.models.user import User
 
-router = APIRouter(prefix="/users", tags=["Users"])
 
-user_service = UserService(UserRepository())
+class UserRoutes:
+    def __init__(self):
+        self.router = APIRouter(prefix="/users", tags=["Users"])
+        self.user_service = UserService(UserRepository())
 
-@router.post("/", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-def create_user(payload: UserCreate, db: Session = Depends(get_db)):
-    try:
-        user = user_service.create_user(db, payload)
-    except ValueError as e:
-        if str(e) == "email_exists":
-            raise HTTPException(status_code=400, detail="Email already registered")
-        if str(e) == "username_exists":
-            raise HTTPException(status_code=400, detail="Username already taken")
-        raise HTTPException(status_code=400, detail="Bad request")
-    return user
+        self.router.add_api_route(
+            "/",
+            self.create_user,
+            response_model=UserResponse,
+            status_code=status.HTTP_201_CREATED,
+            methods=["POST"],
+        )
 
-@router.get("/{user_id}", response_model=UserResponse)
-def get_user(user_id: int, db: Session = Depends(get_db)):
-    user = user_service.get_user_by_id(db, user_id)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    return user
+        self.router.add_api_route(
+            "/", self.get_all_users, response_model=list[UserResponse], methods=["GET"]
+        )
 
-@router.put("/{user_id}", response_model=UserResponse)
-def update_user(
-    user_id: int,
-    payload: UserUpdate,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-    if current_user.id != user_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to update this user")
-    updated_user = user_service.update_user(db, user_id, payload)
-    if not updated_user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    return updated_user
+        self.router.add_api_route(
+            "/{user_id}", self.get_user, response_model=UserResponse, methods=["GET"]
+        )
 
-@router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_user(
-    user_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-    if current_user.id != user_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to delete this user")
-    success = user_service.delete_user(db, user_id)
-    if not success:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    return None
+        self.router.add_api_route(
+            "/{user_id}", self.update_user, response_model=UserResponse, methods=["PUT"]
+        )
+
+        # self.router.add_api_route(
+        #     "/{user_id}",
+        #     self.delete_user,
+        #     status_code=status.HTTP_204_NO_CONTENT,
+        #     methods=["DELETE"],
+        # )
+
+    def create_user(self, payload: UserCreate, db: Session = Depends(get_db)):
+        try:
+            user = self.user_service.create_user(db, payload)
+        except ValueError as e:
+            if str(e) == "email_exists":
+                raise HTTPException(status_code=400, detail="Email already registered")
+            if str(e) == "username_exists":
+                raise HTTPException(status_code=400, detail="Username already taken")
+            raise HTTPException(status_code=400, detail="Bad request")
+        return user
+
+    def get_user(
+        self,
+        user_id: int,
+        db: Session = Depends(get_db),
+        current_user: User = Depends(get_current_user),
+    ):
+        user = self.user_service.get_user_by_id(db, user_id)
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        return user
+
+    def get_all_users(
+        self,
+        db: Session = Depends(get_db),
+        current_user: User = Depends(get_current_user),
+    ):
+        users = self.user_service.get_all_users(db)
+        return users
+
+    def update_user(
+        self,
+        user_id: int,
+        payload: UserUpdate,
+        db: Session = Depends(get_db),
+        current_user: User = Depends(get_current_user),
+    ):
+        if current_user.id != user_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Not authorized to update this user",
+            )
+        updated_user = self.user_service.update_user(db, user_id, payload)
+        if not updated_user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+            )
+        return updated_user
+
+    def delete_user(
+        self,
+        user_id: int,
+        db: Session = Depends(get_db),
+        current_user: User = Depends(get_current_user),
+    ):
+        if current_user.id != user_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Not authorized to delete this user",
+            )
+        success = self.user_service.delete_user(db, user_id)
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+            )
+        return None

@@ -1,6 +1,7 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
 from app.core.database import Base
+
 
 class Group(Base):
     __tablename__ = "groups"
@@ -9,5 +10,11 @@ class Group(Base):
     name = Column(String(150), nullable=False)
     description = Column(String(500), nullable=True)
 
-    members = relationship("GroupMember", back_populates="group", cascade="all, delete-orphan")
-    expenses = relationship("Expense", back_populates="group", cascade="all, delete-orphan")
+    creator_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+
+    members = relationship(
+        "GroupMember", back_populates="group", cascade="all, delete-orphan"
+    )
+    expenses = relationship(
+        "Expense", back_populates="group", cascade="all, delete-orphan"
+    )

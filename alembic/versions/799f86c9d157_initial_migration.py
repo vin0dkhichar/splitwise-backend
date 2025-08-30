@@ -1,8 +1,8 @@
-"""add splitwise tables
+"""Initial migration
 
-Revision ID: 26039971c797
-Revises: ca35c2303c48
-Create Date: 2025-08-10 14:55:02.483562
+Revision ID: 799f86c9d157
+Revises: 
+Create Date: 2025-08-24 10:15:59.533088
 
 """
 from typing import Sequence, Union
@@ -12,8 +12,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '26039971c797'
-down_revision: Union[str, Sequence[str], None] = 'ca35c2303c48'
+revision: str = '799f86c9d157'
+down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -28,12 +28,23 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_groups_id'), 'groups', ['id'], unique=False)
+    op.create_table('users',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('username', sa.String(length=50), nullable=False),
+    sa.Column('email', sa.String(length=100), nullable=False),
+    sa.Column('password_hash', sa.String(length=255), nullable=False),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_users_email'), 'users', ['email'], unique=True)
+    op.create_index(op.f('ix_users_id'), 'users', ['id'], unique=False)
+    op.create_index(op.f('ix_users_username'), 'users', ['username'], unique=True)
     op.create_table('expenses',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('description', sa.String(length=255), nullable=True),
     sa.Column('amount', sa.Float(), nullable=False),
     sa.Column('paid_by', sa.Integer(), nullable=False),
     sa.Column('group_id', sa.Integer(), nullable=True),
+    sa.Column('expense_type', sa.Enum('EQUAL', 'EXACT', 'PERCENTAGE', name='expensetype'), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
     sa.ForeignKeyConstraint(['group_id'], ['groups.id'], ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['paid_by'], ['users.id'], ondelete='CASCADE'),
@@ -56,6 +67,7 @@ def upgrade() -> None:
     sa.Column('expense_id', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('share_amount', sa.Float(), nullable=False),
+    sa.Column('is_paid', sa.Boolean(), nullable=False),
     sa.ForeignKeyConstraint(['expense_id'], ['expenses.id'], ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
@@ -73,6 +85,10 @@ def downgrade() -> None:
     op.drop_table('group_members')
     op.drop_index(op.f('ix_expenses_id'), table_name='expenses')
     op.drop_table('expenses')
+    op.drop_index(op.f('ix_users_username'), table_name='users')
+    op.drop_index(op.f('ix_users_id'), table_name='users')
+    op.drop_index(op.f('ix_users_email'), table_name='users')
+    op.drop_table('users')
     op.drop_index(op.f('ix_groups_id'), table_name='groups')
     op.drop_table('groups')
     # ### end Alembic commands ###
